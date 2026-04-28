@@ -1,0 +1,6 @@
+[submodule "docs"]
+	path = docs
+	url = https://github.com/s7Thiago/faqeshop-docs.git
+[submodule "microservices/ordering"]
+	path = microservices/ordering
+	url = https://github.com/s7Thiago/faqeshop-ordering.git
