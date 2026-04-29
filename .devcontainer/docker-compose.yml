@@ -1,0 +1,53 @@
+networks:
+  faqeshop-network:
+    driver: bridge
+
+volumes:
+  maven-cache:
+  gradle-cache:
+  vscode-extensions:
+  gradle-wrapper-cache:
+  faqeshop-rabbitmq:
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.backend
+    container_name: faqeshop-backend
+    image: s7thiago/faqeshop-backend:latest
+    # depends_on:
+    #   - rabbitmq
+    networks:
+      - faqeshop-network
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    env_file:
+      - .env
+    volumes:
+      - ../:/workspace
+      - maven-cache:/root/.m2
+      # NOVOS VOLUMES para cache
+      - gradle-cache:/root/.gradle # Cache principal do Gradle
+      - gradle-wrapper-cache:/root/.gradle/wrapper # Cache do wrapper
+      - vscode-extensions:/root/.vscode-server # Extensions do VS Code
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    command: [ "sh", "-c", "trap 'docker-compose stop' EXIT; while :; do sleep 1; done" ]
+  # rabbitmq:
+  #   image: rabbitmq:3-management # essa versão tem a UI de gerenciamento
+  #   restart: no
+  #   ports:
+  #     - 5672:5672
+  #     - 15672:15672
+  #   env_file:
+  #     - .env
+  #   volumes: # guardar as infos das filas e exchanges
+  #     - faqeshop-rabbitmq:/var/lib/rabbitmq
+  #     - ./rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+  #   networks:
+  #     - faqeshop-network

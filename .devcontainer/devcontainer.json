@@ -1,0 +1,42 @@
+{
+    "name": "Temperature Processing API",
+    "dockerComposeFile": [
+        "../docker-compose.yml"
+    ],
+    "service": "backend",
+    "workspaceFolder": "/workspace",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "vscjava.vscode-java-pack",
+                "vmware.vscode-spring-boot",
+                "gabrielbb.vscode-lombok",
+                "vscjava.vscode-gradle"
+            ],
+            "settings": {
+                "java.configuration.maven.userSettings": "/root/.m2/settings.xml",
+                "java.import.gradle.enabled": true,
+                "java.import.gradle.wrapper.enabled": true,
+                "java.import.gradle.offline.enabled": false,
+                "java.gradle.buildServer.enabled": "on",
+                "java.sources.organizeImports.starThreshold": 99,
+                "java.configuration.maven.downloadSources": true,
+                "java.configuration.maven.downloadJavadoc": true,
+                "gradle.nestedProjects": true,
+                "files.watcherExclude": {
+                    "**/build/**": true,
+                    "**/.gradle/**": true
+                }
+            }
+        }
+    },
+    "remoteEnv": {
+        "JAVA_HOME": "/usr/local/openjdk-21",
+        "GRADLE_USER_HOME": "/root/.gradle"
+    },
+    "postCreateCommand": "echo 'Container ready for development!'",
+    "mounts": [
+        "source=gradle-cache,target=/root/.gradle,type=volume",
+        "source=vscode-extensions,target=/root/.vscode-server,type=volume"
+    ]
+}

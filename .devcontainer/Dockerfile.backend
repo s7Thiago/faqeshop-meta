@@ -1,0 +1,91 @@
+# Usar imagem específica e mais atual
+FROM eclipse-temurin:21-jdk-jammy
+
+LABEL maintainer="Thiago Silva" \
+    email="thyagosousasilva@gmail.com" \
+    version="1.0"
+
+# ========================================
+# LAYER 1: Instalação de dependências do sistema
+# Esta layer raramente muda, então será cached
+# ========================================
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    maven \
+    git \
+    python3 \
+    curl \
+    wget \
+    unzip \
+    lsof \
+    iputils-ping \
+    htop \
+    ncdu \
+    telnet \
+    zsh \
+    ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# ========================================
+# LAYER 2: Configuração do Gradle (cached)
+# ========================================
+ENV GRADLE_VERSION=8.5
+RUN wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip -O /tmp/gradle.zip && \
+    unzip -q /tmp/gradle.zip -d /opt && \
+    mv /opt/gradle-${GRADLE_VERSION} /opt/gradle && \
+    ln -s /opt/gradle/bin/gradle /usr/local/bin/gradle && \
+    rm /tmp/gradle.zip
+
+
+# ========================================
+# LAYER 3: Configuração do Shell (cached)
+# ========================================
+RUN chsh -s $(which zsh) && \
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
+# ========================================
+# LAYER 4: Plugins do Zsh (cached)
+# ========================================
+RUN git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git \
+    /root/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting && \
+    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
+    /root/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+
+# ========================================
+# LAYER 5: Environment Variables (raramente muda)
+# ========================================
+ENV SHELL=/bin/zsh \
+    ZSH=/root/.oh-my-zsh \
+    JAVA_OPTS="-Duser.timezone=UTC -Xmx2g -XX:+UseG1GC" \
+    GRADLE_HOME=/opt/gradle \
+    PATH=$PATH:/opt/gradle/bin \
+    GRADLE_USER_HOME=/root/.gradle \
+    MAVEN_OPTS="-Xmx1g"
+
+# ========================================
+# LAYER 6: Criação de diretórios (cached)
+# ========================================
+RUN mkdir -p /root/.gradle/caches \
+    /root/.gradle/wrapper \
+    /root/.vscode-server \
+    /root/.m2 \
+    /workspace
+
+# ========================================
+# LAYER 7: Arquivos de configuração
+# Esta layer só muda se você alterar .zshrc
+# ========================================
+COPY .devcontainer/.zshrc /root/.zshrc
+COPY .devcontainer/warm-cache.sh /usr/local/bin/warm-cache.sh
+RUN chmod +x /usr/local/bin/warm-cache.sh
+
+# ========================================
+# LAYER 8: Configuração final
+# ========================================
+WORKDIR /workspace
+
+EXPOSE 8080 8081
+
+# Usar exec form para melhor handling de sinais
+CMD ["tail", "-f", "/dev/null"]
